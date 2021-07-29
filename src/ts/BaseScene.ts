@@ -1,12 +1,22 @@
 import {
-    AxesHelper, BoxGeometry, DepthFormat, DepthStencilFormat, DepthTexture,
-    DirectionalLight, DoubleSide, FloatType, Mesh, MeshBasicMaterial,
-    MeshDepthMaterial, NearestFilter, OrthographicCamera,
-    PerspectiveCamera, PlaneBufferGeometry, PlaneGeometry, RGBFormat,
-    Scene, UnsignedIntType,
-    WebGLRenderer, WebGLRenderTarget
+    AxesHelper,
+    BoxGeometry,
+    DepthFormat,
+    DepthTexture,
+    DirectionalLight,
+    Mesh,
+    MeshBasicMaterial,
+    OrthographicCamera,
+    PerspectiveCamera,
+    PlaneBufferGeometry,
+    PlaneGeometry,
+    RGBAFormat,
+    Scene,
+    UnsignedShortType,
+    WebGLRenderer,
+    WebGLRenderTarget
 } from "three"
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
+import {OrbitControls} from "three/examples/jsm/controls/OrbitControls"
 import {DepthTargetMaterial} from "./DepthTargetMaterial";
 import {DepthOffsetMaterial} from "./DepthOffsetMaterial";
 
@@ -14,7 +24,7 @@ import {DepthOffsetMaterial} from "./DepthOffsetMaterial";
 export class BaseScene {
 
     public scene = new Scene()
-    public camera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 100)
+    public camera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 40)
     public renderer = new WebGLRenderer()
     public controls = new OrbitControls(this.camera, this.renderer.domElement)
 
@@ -24,7 +34,7 @@ export class BaseScene {
     private strip: Mesh;
     private strip2: Mesh;
 
-
+    private basicMat = new MeshBasicMaterial();
 
     private depthScene: Scene;
     private depthTarget: WebGLRenderTarget;
@@ -44,13 +54,14 @@ export class BaseScene {
 
         this.box = new Mesh(new BoxGeometry(2, 2, 2), material)
 
-        this.depthReadMaterial = new DepthOffsetMaterial();
+        this.depthReadMaterial = new DepthOffsetMaterial(this.camera);
         this.strip = new Mesh(new PlaneBufferGeometry(1.75, 1.75), this.depthReadMaterial);
         this.strip.rotateY(Math.PI / 4);
         this.strip.position.set(1.5, 0.5, 1.5);
 
         this.strip2 = this.strip.clone();
         this.strip2.position.set(4, 0.5, 1.5)
+        this.strip2.material = this.basicMat;
 
         this.box.position.set(1.5, 0.5, 1.5)
         this.camera.position.set(6, 3, 6)
@@ -70,15 +81,12 @@ export class BaseScene {
         this.scene.add(this.strip2);
 
         this.depthTarget = new WebGLRenderTarget( window.innerWidth, window.innerHeight );
-        this.depthTarget.texture.format = RGBFormat;
-        this.depthTarget.texture.minFilter = NearestFilter;
-        this.depthTarget.texture.magFilter = NearestFilter;
-        this.depthTarget.texture.generateMipmaps = false;
+        this.depthTarget.texture.format = RGBAFormat;
         this.depthTarget.stencilBuffer = false;
         this.depthTarget.depthBuffer = true;
         this.depthTarget.depthTexture = new DepthTexture(window.innerWidth, window.innerHeight);
         this.depthTarget.depthTexture.format = DepthFormat;
-        this.depthTarget.depthTexture.type = FloatType;
+        this.depthTarget.depthTexture.type = UnsignedShortType;
 
         this.packTarget = new WebGLRenderTarget(window.innerWidth, window.innerHeight)
 
@@ -121,8 +129,8 @@ export class BaseScene {
         let timer = 0.0015 * Date.now()
         this.strip.position.z = 2.5 + (Math.sin(timer));
         this.strip2.position.z = 2.5 + (Math.sin(timer));
-        //this.box.position.y = 1.5 + (0.5 * Math.sin(timer))
-        //this.box.rotation.x += 0.02
+
+        this.strip.material = this.basicMat;
 
         this.renderer.setRenderTarget(this.depthTarget);
         this.renderer.render(this.scene, this.camera)
@@ -136,20 +144,10 @@ export class BaseScene {
 
         this.depthReadMaterial.uniforms.tDepth.value = this.packTarget.texture;
 
+        this.strip.material = this.depthReadMaterial;
+
         this.renderer.setRenderTarget(null);
         this.renderer.render(this.scene, this.camera);
-        //this.renderer.render(this.scene, this.camera);
-
-        // // render scene into target
-        // this.renderer.setRenderTarget( this.depthTarget );
-        // this.renderer.render( this.scene, this.camera );
-        //
-        // // render post FX
-        // this.depthMaterial.uniforms.tDiffuse.value = this.depthTarget.texture;
-        // this.depthMaterial.uniforms.tDepth.value = this.depthTarget.depthTexture;
-        //
-        // this.renderer.setRenderTarget( null );
-        // this.renderer.render( this.depthScene, this.depthCamera );
     }
 }
 
