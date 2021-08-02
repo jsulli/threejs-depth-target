@@ -1,18 +1,18 @@
 import {
     AxesHelper,
+    BoxBufferGeometry,
     BoxGeometry,
     DepthFormat,
     DepthTexture,
     DirectionalLight,
+    FloatType,
     Mesh,
     MeshBasicMaterial,
     OrthographicCamera,
     PerspectiveCamera,
-    PlaneBufferGeometry,
     PlaneGeometry,
     RGBAFormat,
     Scene,
-    UnsignedShortType,
     WebGLRenderer,
     WebGLRenderTarget
 } from "three"
@@ -24,7 +24,7 @@ import {DepthOffsetMaterial} from "./DepthOffsetMaterial";
 export class BaseScene {
 
     public scene = new Scene()
-    public camera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 40)
+    public camera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 100)
     public renderer = new WebGLRenderer()
     public controls = new OrbitControls(this.camera, this.renderer.domElement)
 
@@ -55,7 +55,7 @@ export class BaseScene {
         this.box = new Mesh(new BoxGeometry(2, 2, 2), material)
 
         this.depthReadMaterial = new DepthOffsetMaterial(this.camera);
-        this.strip = new Mesh(new PlaneBufferGeometry(1.75, 1.75), this.depthReadMaterial);
+        this.strip = new Mesh(new BoxBufferGeometry(1.75, 1.75), this.depthReadMaterial);
         this.strip.rotateY(Math.PI / 4);
         this.strip.position.set(1.5, 0.5, 1.5);
 
@@ -73,7 +73,7 @@ export class BaseScene {
         this.camera.lookAt(this.scene.position)
 
         this.scene.add(this.light)
-        this.scene.add(this.axis)
+        //this.scene.add(this.axis)
         this.scene.add(this.box)
         this.scene.add(box2);
 
@@ -86,7 +86,7 @@ export class BaseScene {
         this.depthTarget.depthBuffer = true;
         this.depthTarget.depthTexture = new DepthTexture(window.innerWidth, window.innerHeight);
         this.depthTarget.depthTexture.format = DepthFormat;
-        this.depthTarget.depthTexture.type = UnsignedShortType;
+        this.depthTarget.depthTexture.type = FloatType;
 
         this.packTarget = new WebGLRenderTarget(window.innerWidth, window.innerHeight)
 
@@ -102,7 +102,7 @@ export class BaseScene {
         // Setup post processing stage
         const planeGeo = new PlaneGeometry( 2, 2 );
         this.depthCamera = new OrthographicCamera( - 1, 1, 1, - 1, 0, 1 );
-        this.depthCamera.position.z = 1
+        //this.depthCamera.position.z = 1
         this.depthMaterial = new DepthTargetMaterial(this.camera);
 
 
@@ -130,7 +130,9 @@ export class BaseScene {
         this.strip.position.z = 2.5 + (Math.sin(timer));
         this.strip2.position.z = 2.5 + (Math.sin(timer));
 
-        this.strip.material = this.basicMat;
+        this.scene.remove(this.strip);
+
+        //this.scene.overrideMaterial = this.depthMaterial;
 
         this.renderer.setRenderTarget(this.depthTarget);
         this.renderer.render(this.scene, this.camera)
@@ -144,7 +146,7 @@ export class BaseScene {
 
         this.depthReadMaterial.uniforms.tDepth.value = this.packTarget.texture;
 
-        this.strip.material = this.depthReadMaterial;
+        this.scene.add(this.strip);
 
         this.renderer.setRenderTarget(null);
         this.renderer.render(this.scene, this.camera);

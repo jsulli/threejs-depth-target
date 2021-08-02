@@ -8,15 +8,16 @@ uniform float cameraFar;
 
 
 float readDepth( sampler2D depthSampler, vec2 coord ) {
-    float fragCoordZ = texture2D( depthSampler, coord ).x;
-    float viewZ = perspectiveDepthToViewZ( fragCoordZ, cameraNear, cameraFar );
-    return viewZToOrthographicDepth( viewZ, cameraNear, cameraFar );
+    return texture2D( depthSampler, coord ).x;
+//    float fragCoordZ = texture2D( depthSampler, coord ).x;
+//    float viewZ = perspectiveDepthToViewZ( fragCoordZ, cameraNear, cameraFar );
+//    return viewZToOrthographicDepth( viewZ, cameraNear, cameraFar );
 }
 
 void main() {
-    vec3 diffuse = texture2D( tDiffuse, vUv ).rgb;
     float depth = readDepth( tDepth, vUv );
     vec4 pack = packDepthToRGBA(depth);
 
     gl_FragColor = pack;
+    //gl_FragColor = vec4(depth);
 }
